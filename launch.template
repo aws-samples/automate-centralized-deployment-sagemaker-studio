@@ -1,0 +1,317 @@
+Parameters:
+  LaunchPrincipal:
+    Type: String
+    Description: Specify an ARN of a user, group or role to be used for provisioning this product
+    Default: arn:aws:iam::[account number]:user/[iam user name]
+
+Resources:
+
+ # Policies to be attached to the SageMaker Execution role.
+  ##########################################################
+
+  SageMakerReadOnlyAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: SageMakerReadOnlyAccessPolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AmazonSageMakerDescribeReadyOnlyPolicy
+            Effect: Allow
+            Action:
+              - sagemaker:Describe*
+              - sagemaker:GetSearchSuggestions
+            Resource: "*"
+          - Sid: AmazonSageMakerListOnlyPolicy
+            Effect: Allow
+            Action:
+              - sagemaker:List*
+            Resource: "*"            
+          - Sid: AmazonSageMakerUIandMetricsOnlyPolicy
+            Effect: Allow
+            Action:
+              - sagemaker:*App
+              - sagemaker:Search
+              - sagemaker:RenderUiTemplate
+              - sagemaker:BatchGetMetrics
+            Resource: "*"
+          - Sid: AmazonSageMakerEC2ReadOnlyPolicy
+            Effect: Allow
+            Action:
+              - ec2:DescribeDhcpOptions
+              - ec2:DescribeNetworkInterfaces
+              - ec2:DescribeRouteTables
+              - ec2:DescribeSecurityGroups
+              - ec2:DescribeSubnets
+              - ec2:DescribeVpcEndpoints
+              - ec2:DescribeVpcs
+            Resource: "*"
+          - Sid: AmazonSageMakerIAMReadOnlyPolicy
+            Effect: Allow
+            Action:
+              - iam:ListRoles
+            Resource: "*"
+
+  SageMakerAccessSupportingServicesPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: SageMakerAccessSupportingServicesPolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AmazonSageMakerCRUDAccessS3Policy
+            Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:GetObject
+              - s3:AbortMultipartUpload
+              - s3:DeleteObject
+              - s3:CreateBucket
+              - s3:ListBucket
+              - s3:PutBucketCORS
+              - s3:ListAllMyBuckets
+              - s3:GetBucketCORS
+              - s3:GetBucketLocation
+            Resource: "*"
+
+  SageMakerDeveloperPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: SageMakerDeveloperPolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: SageMakerStudioCreateApp
+            Effect: Allow
+            Action:
+              - sagemaker:CreateApp
+            Resource: "*"
+          - Sid: AmazonSageMakerStudioIAMPassRole
+            Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource: !GetAtt SageMakerTrainingJobExecutionRole.Arn
+            Condition:
+              StringEquals:
+                iam:PassedToService: sagemaker.amazonaws.com
+          - Sid: SageMakerInvokeEndpointRole
+            Effect: Allow
+            Action:
+              - sagemaker:InvokeEndpoint
+            Resource: "*"
+          - Sid: AmazonSageMakerAddTags
+            Effect: Allow
+            Action:
+              - sagemaker:AddTags
+            Resource: "*"
+          - Sid: AmazonSageMakerCreate
+            Effect: Allow
+            Action:
+              - sagemaker:Create*
+            Resource: "*"
+          - Sid: AmazonSageMakerUpdateDeleteExecutePolicy
+            Effect: Allow
+            Action:
+              - sagemaker:Delete*
+              - sagemaker:Stop*
+              - sagemaker:Update*
+              - sagemaker:Start*
+              - sagemaker:DisassociateTrialComponent
+              - sagemaker:AssociateTrialComponent
+              - sagemaker:BatchPutMetrics
+            Resource: "*"
+
+  # Execution Roles used by Studio and SageMaker jobs
+  ########################################################################
+
+  SageMakerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SageMakerExecutionRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: 
+              Service:
+                - sagemaker.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - !Ref SageMakerReadOnlyAccessPolicy
+        - !Ref SageMakerAccessSupportingServicesPolicy
+        - !Ref SageMakerDeveloperPolicy
+
+  SageMakerTrainingJobExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SageMakerTrainingJobExecutionRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: 
+              Service:
+                - sagemaker.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: SageMakerTrainingJobPolicy
+          PolicyDocument:            
+            Version: "2012-10-17"
+            Statement:
+              - Sid: SageMakerTraingingJobExecutionPolicy
+                Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:CreateLogGroup
+                  - logs:DescribeLogStreams
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListBucket
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                Resource: "*"        
+
+  # Managed policy which can be attached to the Data Scientist Role
+  ##################################################################
+  DataScientistPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: CreatePresignedDomainUrlPolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: CreatePresignedDomainUrlPolicy
+            Effect: Allow
+            Action:
+              - sagemaker:CreatePresignedDomainUrl
+            Resource: "*"
+
+
+
+  # Products populated to Service Catalog
+  ###################################################  
+  
+  SageMakerStudioProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Owner: AWS
+      Name: SageMaker Studio Domain
+      ProvisioningArtifactParameters:
+        - Name: SageMaker Studio Domain
+          Description: Provisions a SageMaker domain and its associated roles for Studio users
+          Info:
+            LoadTemplateFromURL: https://aws-ml-blog.s3.us-east-1.amazonaws.com/artifacts/best-practices-provisioning-sagemaker-studio/product_studio_domain.template
+            
+  SageMakerUserProfileProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Owner: AWS
+      Name: SageMaker Studio User Profile
+      ProvisioningArtifactParameters:
+        - Name: SageMaker Studio User Profile
+          Description: Provisions a new User Profile under SageMaker Studio
+          Info:
+            LoadTemplateFromURL: https://aws-ml-blog.s3.us-east-1.amazonaws.com/artifacts/best-practices-provisioning-sagemaker-studio/product_user_profile.template
+
+  SageMakerStudioProductPortfolio:
+    Type: AWS::ServiceCatalog::Portfolio
+    Properties:
+      ProviderName: AWS
+      DisplayName: SageMaker Product Portfolio
+
+  SageMakerStudioProductPortfolioAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref SageMakerStudioProductPortfolio
+      ProductId: !Ref SageMakerStudioProduct
+
+  SageMakerUserProfileProductPortfolioAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref SageMakerStudioProductPortfolio
+      ProductId: !Ref SageMakerUserProfileProduct
+
+# Sets the principal who can initate provisioning from Service Catalog
+#######################################################################
+  
+  SageMakerStudioPortfolioPrincipalAssociation:
+    Type: AWS::ServiceCatalog::PortfolioPrincipalAssociation
+    Properties:
+      PrincipalARN: !Ref LaunchPrincipal
+      PortfolioId: !Ref SageMakerStudioProductPortfolio
+      PrincipalType: IAM
+
+
+# Role used by Service Catalog to provision products
+#####################################################  
+
+  SageMakerProvisioningRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SageMakerProvisioningRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: 
+              Service:
+                - servicecatalog.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: ProvisioningAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudformation:CreateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:UpdateStack
+                Resource: arn:aws:cloudformation:*:*:stack/SC-*
+              - Effect: Allow
+                Action:
+                  - cloudformation:DescribeStackEvents
+                  - cloudformation:DescribeStacks
+                  - cloudformation:GetTemplateSummary
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - sagemaker:CreateDomain
+                  - sagemaker:DescribeDomain
+                  - sagemaker:DeleteDomain
+                Resource: "*"         
+              - Effect: Allow
+                Action:                  
+                  - s3:Get*
+                Resource: "*"
+                Condition:
+                  StringEquals:
+                    "s3:ExistingObjectTag/servicecatalog:provisioning": "true"
+              - Effect: Allow
+                Action:
+                  - iam:Get*
+                  - iam:List*                  
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: !GetAtt SageMakerExecutionRole.Arn
+              - Effect: Allow
+                Action:
+                  ec2:*
+                Resource: "*"
+
+  SageMakerStudioPortfolioLaunchRoleConstraint:
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: !Ref SageMakerStudioProductPortfolio
+      ProductId: !Ref SageMakerStudioProduct
+      RoleArn: !GetAtt SageMakerProvisioningRole.Arn
+      Description: Role used for provisioning

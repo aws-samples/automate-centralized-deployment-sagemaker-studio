@@ -1,0 +1,23 @@
+Parameters:
+  VpcId:
+    Type: String
+    Description: The ID of the Amazon Virtual Private Cloud (VPC) that Studio uses for communication.
+
+  Subnets:
+    Type: String
+    Description: "The comma separated list of VPC subnet IDs that Studio uses for communication."
+
+Resources:
+  
+  # SageMaker Domain
+  ########################################################################
+
+  SageMakerDomain:
+    Type: AWS::SageMaker::Domain
+    Properties:
+      DomainName: SageMaker-Domain
+      VpcId: !Ref VpcId
+      SubnetIds: !Split [',', !Ref Subnets ]      
+      AuthMode: IAM
+      DefaultUserSettings:
+        ExecutionRole: !Join ["", ["arn:aws:iam::", !Ref AWS::AccountId, ":role/SageMakerExecutionRole"] ]
