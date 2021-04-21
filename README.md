@@ -1,6 +1,7 @@
-# Best practices for provisioning Amazon SageMaker Studio
+# Automate Centralized Deployment of Amazon SageMaker Studio with AWS Service Catalog
 
-This repository includes reference architecture and cloud formation templates for provisioning SageMaker Studio. We use Service Catalog to set up and provision users. Diagram below showcases two flows that are supported, Cloud Admin and Data Scientist flows.
+
+This repository includes reference architecture and cloud formation templates for provisioning SageMaker Studio as covered in the blog post here *(link to the post once published)*. We use AWS Service Catalog to set up SageMaker Studio and provision Studio users. The diagram below showcases two flows that are supported in this architecture, Cloud Admin and Data Scientist.
 
 ![Alt Flow Diagram](images/flow_diagram.png?raw=true "Flow Diagram")
 
@@ -21,7 +22,7 @@ This setup covers two personas:
 
 * *Cloud Admin* – This team is also responsible for building and maintaining the infrastructure for supporting ML services, such as provisioning notebooks for data scientists to use, creating secure buckets for storing data, managing costs for ML from various lines of business (LOBs), and more.
 
-* *Data science COE:* Data scientists within an AI Center of Excellence (COE) or embedded within the LOBs are responsible for building, training, and deploying models. In regulated industries, data scientists need to adhere to the organization’s security boundaries, such as using encrypted buckets for data access, use of private networking for accessing APIs, committing code to source control, ensuring all their experiments and trials are properly logged, enforcing encryption of data in transit, and monitoring deployed models.
+* *Data science:* Data scientists within an AI Center of Excellence (COE) or embedded within the LOBs are responsible for building, training, and deploying models. In regulated industries, data scientists need to adhere to the organization’s security boundaries, such as using encrypted buckets for data access, use of private networking for accessing APIs, committing code to source control, ensuring all their experiments and trials are properly logged, enforcing encryption of data in transit, and monitoring deployed models.
 
 
 Below are the resources the template provisions:
@@ -33,7 +34,7 @@ Below are the resources the template provisions:
 5. Three Service Catalog products 
 * Create Domain
 * Create User
-* Attach Image 
+
 
 
 ## Below are the steps you will go through:
