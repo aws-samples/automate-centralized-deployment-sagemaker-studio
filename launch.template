@@ -286,6 +286,11 @@ Resources:
                   - sagemaker:CreateDomain
                   - sagemaker:DescribeDomain
                   - sagemaker:DeleteDomain
+                  - sagemaker:CreateUserProfile
+                  - sagemaker:DeleteUserProfile
+                  - sagemaker:UpdateUserProfile
+                  - sagemaker:DescribeUserProfile
+                  - sagemaker:ListUserProfiles
                 Resource: "*"         
               - Effect: Allow
                 Action:                  
@@ -313,5 +318,13 @@ Resources:
     Properties:
       PortfolioId: !Ref SageMakerStudioProductPortfolio
       ProductId: !Ref SageMakerStudioProduct
+      RoleArn: !GetAtt SageMakerProvisioningRole.Arn
+      Description: Role used for provisioning
+
+  SageMakerStudioUserProfileLaunchRoleConstraint:
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: !Ref SageMakerStudioProductPortfolio
+      ProductId: !Ref SageMakerUserProfileProduct
       RoleArn: !GetAtt SageMakerProvisioningRole.Arn
       Description: Role used for provisioning
